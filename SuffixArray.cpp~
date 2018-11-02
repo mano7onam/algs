@@ -1,0 +1,68 @@
+#pragma GCC optimize ("O3")
+#pragma GCC target ("sse4")
+#include <bits/stdc++.h>
+
+using namespace std;
+
+typedef long long ll;
+typedef long double ld;
+
+struct SuffixArray {
+    int N;
+    vector<int> idx;
+    string str;
+    
+    void compress(vector<int>& v) {
+        vector<int> V = v; 
+	sort(V.begin(), V.end()); 
+	V.erase(unique(V.begin(), V.end()), V.end());
+        for (int& i: v) {
+	    i = lb(all(V),i)-V.begin()+1;
+	}
+    }
+    
+    vi A, L; // L stores order of suffixes
+    
+    int get(int x) { return x >= N ? 0 : A[x]; }
+    
+    void sort_by(int x) { // stable sort elements in a by b
+        vi cum(N+1); F0R(i,N) cum[get(i+x)] ++;
+        int sum = 0; F0R(i,N+1) cum[i] = (sum += cum[i], sum-cum[i]);
+        
+        vi L2(N);
+        for (int i: L) L2[cum[get(i+x)]++] = i;
+        swap(L,L2);
+    }
+    
+    void init(string _str) {
+        str = _str; N = sz(str);
+        A.resize(N); F0R(i,N) A[i] = str[i]; compress(A); 
+        L.resize(N); F0R(i,N) L[i] = i;
+        
+        for (int cnt = 1; cnt < N; cnt <<= 1) { 
+            sort_by(cnt), sort_by(0);
+        
+            vi A2(N);
+            F0R(i,N) {
+                if (i == 0) A2[L[i]] = 1;
+                else A2[L[i]] = A2[L[i-1]]+
+                    (mp(get(L[i]),get(L[i]+cnt)) != mp(get(L[i-1]),get(L[i-1]+cnt)));
+            }
+            
+            swap(A,A2);
+        }
+    }
+    
+    vi lcp() { // KACTL
+        int n = sz(str), h = 0;
+        vi inv(n), res(n);
+        F0R(i,N) inv[L[i]] = i;
+        F0R(i,N) if (inv[i]) {
+            int p0 = L[inv[i] - 1];
+            while (max(i,p0)+h < N && str[i+h] == str[p0+h]) h++;
+            res[inv[i]] = h;
+            if (h) h--;
+        }
+        return res;
+    }
+};
